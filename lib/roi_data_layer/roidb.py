@@ -27,6 +27,7 @@ def prepare_roidb(imdb):
         roidb[i]['image'] = imdb.image_path_at(i)
         roidb[i]['width'] = sizes[i][0]
         roidb[i]['height'] = sizes[i][1]
+        print("looking at annoation " + roidb[i]['image'])
         # need gt_overlaps as a dense array for argmax
         gt_overlaps = roidb[i]['gt_overlaps'].toarray()
         # max overlap with gt over classes (columns)
@@ -41,7 +42,8 @@ def prepare_roidb(imdb):
         assert all(max_classes[zero_inds] == 0)
         # max overlap > 0 => class should not be zero (must be a fg class)
         nonzero_inds = np.where(max_overlaps > 0)[0]
-        assert all(max_classes[nonzero_inds] != 0)
+        print(max_overlaps)
+        #assert all(max_classes[nonzero_inds] != 0)
 
 def add_bbox_regression_targets(roidb):
     """Add information needed to train bounding-box regressors."""

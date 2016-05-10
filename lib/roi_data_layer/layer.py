@@ -32,6 +32,7 @@ class RoIDataLayer(caffe.Layer):
             inds = np.hstack((
                 np.random.permutation(horz_inds),
                 np.random.permutation(vert_inds)))
+            # Error no next link can indicate that you don't have a even number of images
             inds = np.reshape(inds, (-1, 2))
             row_perm = np.random.permutation(np.arange(inds.shape[0]))
             inds = np.reshape(inds[row_perm, :], (-1,))
@@ -92,8 +93,13 @@ class RoIDataLayer(caffe.Layer):
 
         # data blob: holds a batch of N images, each with 3 channels
         idx = 0
-        top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
-            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+        if cfg.TRAIN.IS_COLOR == True:
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
+                max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+        else:
+            #top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
+             top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
+                max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
         self._name_to_top_map['data'] = idx
         idx += 1
 

@@ -35,10 +35,18 @@ def get_minibatch(roidb, num_classes):
         assert len(roidb) == 1, "Single batch only"
         # gt boxes: (x1, y1, x2, y2, cls)
         gt_inds = np.where(roidb[0]['gt_classes'] != 0)[0]
-        gt_boxes = np.empty((len(gt_inds), 5), dtype=np.float32)
-        gt_boxes[:, 0:4] = roidb[0]['boxes'][gt_inds, :] * im_scales[0]
-        gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
-        blobs['gt_boxes'] = gt_boxes
+        if len(gt_inds) > 0:
+            gt_boxes = np.empty((len(gt_inds), 5), dtype=np.float32)
+            gt_boxes[:, 0:4] = roidb[0]['boxes'][gt_inds, :] * im_scales[0]
+            gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
+            blobs['gt_boxes'] = gt_boxes
+        else:
+            # This is a background object.  We want it as well
+            gt_boxes = np.empty((1, 5), dtype=np.float32)
+            gt_boxes[:, 0:4] = roidb[0]['boxes'][0, :] * im_scales[0]
+            gt_boxes[:, 4] = 0
+            blobs['gt_boxes'] = gt_boxes
+
         blobs['im_info'] = np.array(
             [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
             dtype=np.float32)
@@ -134,9 +142,17 @@ def _get_image_blob(roidb, scale_inds):
     processed_ims = []
     im_scales = []
     for i in xrange(num_images):
-        im = cv2.imread(roidb[i]['image'])
-        if roidb[i]['flipped']:
-            im = im[:, ::-1, :]
+        if cfg.TRAIN.IS_COLOR == True:
+            im = cv2.imread(roidb[i]['image'])
+            if roidb[i]['flipped']:
+                im = im[:, ::-1, :]
+        else:
+            gim = cv2.imread(roidb[i]['image'], flags= cv2.CV_LOAD_IMAGE_GRAYSCALE)
+            im = cv2.cvtColor(gim, cv2.COLOR_GRAY2BGR)
+            if roidb[i]['flipped']:
+                #im = im[:, ::-1]
+                im = im[:, ::-1, :]
+
         target_size = cfg.TRAIN.SCALES[scale_inds[i]]
         im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size,
                                         cfg.TRAIN.MAX_SIZE)

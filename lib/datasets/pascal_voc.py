@@ -17,22 +17,27 @@ import utils.cython_bbox
 import cPickle
 import subprocess
 
+datasets.ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
+
 class pascal_voc(datasets.imdb):
     def __init__(self, image_set, year, devkit_path=None):
-        datasets.imdb.__init__(self, 'voc_' + year + '_' + image_set)
+        #datasets.imdb.__init__(self, 'voc_' + year + '_' + image_set)
+        datasets.imdb.__init__(self,  year + '_' + image_set)
         self._year = year
         self._image_set = image_set
         self._devkit_path = self._get_default_path() if devkit_path is None \
                             else devkit_path
-        self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
+        #self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
+        self._data_path = os.path.join(self._devkit_path, self._year)
         self._classes = ('__background__', # always index 0
+        #                 'ship')
                          'aeroplane', 'bicycle', 'bird', 'boat',
                          'bottle', 'bus', 'car', 'cat', 'chair',
                          'cow', 'diningtable', 'dog', 'horse',
                          'motorbike', 'person', 'pottedplant',
                          'sheep', 'sofa', 'train', 'tvmonitor')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
-        self._image_ext = '.jpg'
+        self._image_ext = ['.jpg', '.jpeg', '.png']
         self._image_index = self._load_image_set_index()
         # Default to roidb handler
         self._roidb_handler = self.selective_search_roidb
@@ -59,8 +64,12 @@ class pascal_voc(datasets.imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
-        image_path = os.path.join(self._data_path, 'JPEGImages',
-                                  index + self._image_ext)
+        image_path = None
+        for ext in self._image_ext:
+            image_path = os.path.join(self._data_path, 'JPEGImages',
+                                  index + ext)
+            if os.path.exists(image_path):
+                break
         assert os.path.exists(image_path), \
                 'Path does not exist: {}'.format(image_path)
         return image_path
@@ -83,7 +92,7 @@ class pascal_voc(datasets.imdb):
         """
         Return the default path where PASCAL VOC is expected to be installed.
         """
-        return os.path.join(datasets.ROOT_DIR, 'data', 'VOCdevkit' + self._year)
+        return os.path.join(datasets.ROOT_DIR, 'data', self._year)
 
     def gt_roidb(self):
         """
@@ -122,10 +131,12 @@ class pascal_voc(datasets.imdb):
             print '{} ss roidb loaded from {}'.format(self.name, cache_file)
             return roidb
 
-        if int(self._year) == 2007 or self._image_set != 'test':
+        if self._year == 'ak47' or int(self._year) != 2006 or  \
+             self._image_set != 'test':
             gt_roidb = self.gt_roidb()
-            ss_roidb = self._load_selective_search_roidb(gt_roidb)
-            roidb = datasets.imdb.merge_roidbs(gt_roidb, ss_roidb)
+            #ss_roidb = self._load_selective_search_roidb(gt_roidb)
+            #roidb = datasets.imdb.merge_roidbs(gt_roidb, ss_roidb)
+            roidb = gt_roidb
         else:
             roidb = self._load_selective_search_roidb(None)
         with open(cache_file, 'wb') as fid:
@@ -135,7 +146,8 @@ class pascal_voc(datasets.imdb):
         return roidb
 
     def rpn_roidb(self):
-        if int(self._year) == 2007 or self._image_set != 'test':
+        if self._year == 'ak47' or int(self._year) != 2006 or  \
+          self._image_set != 'test':
             gt_roidb = self.gt_roidb()
             rpn_roidb = self._load_rpn_roidb(gt_roidb)
             roidb = datasets.imdb.merge_roidbs(gt_roidb, rpn_roidb)
@@ -177,6 +189,15 @@ class pascal_voc(datasets.imdb):
         def get_data_from_tag(node, tag):
             return node.getElementsByTagName(tag)[0].childNodes[0].data
 
+        if not os.path.exists(filename):
+	        boxes =  np.zeros((1, 4), dtype=np.uint16)
+	        gt_classes = np.zeros((1, self.num_classes), dtype=np.int32)
+	        gt_overlays =  np.zeros((1, self.num_classes),dtype=np.float32)
+
+	        return {'boxes' : boxes,
+		        'gt_classes': gt_classes,
+		        'gt_overlaps' : gt_overlays,
+	  	        'flipped' : False}
         with open(filename) as f:
             data = minidom.parseString(f.read())
 
@@ -194,7 +215,7 @@ class pascal_voc(datasets.imdb):
         boxes = np.zeros((num_objs, 4), dtype=np.uint16)
         gt_classes = np.zeros((num_objs), dtype=np.int32)
         overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
-
+        print(filename)
         # Load object bounding boxes into a data frame.
         for ix, obj in enumerate(objs):
             # Make pixel indexes 0-based
@@ -202,6 +223,7 @@ class pascal_voc(datasets.imdb):
             y1 = float(get_data_from_tag(obj, 'ymin')) - 1
             x2 = float(get_data_from_tag(obj, 'xmax')) - 1
             y2 = float(get_data_from_tag(obj, 'ymax')) - 1
+            print(str(x1) + ',' + str(y1) + ',' + str(x2) + ',' + str(y2))
             cls = self._class_to_ind[
                     str(get_data_from_tag(obj, "name")).lower().strip()]
             boxes[ix, :] = [x1, y1, x2, y2]
@@ -222,7 +244,8 @@ class pascal_voc(datasets.imdb):
             comp_id += '-{}'.format(os.getpid())
 
         # VOCdevkit/results/VOC2007/Main/comp4-44503_det_test_aeroplane.txt
-        path = os.path.join(self._devkit_path, 'results', 'VOC' + self._year,
+        #path = os.path.join(self._devkit_path, 'results', 'VOC' + self._year,
+        path = os.path.join(self._devkit_path, 'results', self._year,
                             'Main', comp_id + '_')
         for cls_ind, cls in enumerate(self.classes):
             if cls == '__background__':
@@ -269,6 +292,7 @@ class pascal_voc(datasets.imdb):
             self.config['cleanup'] = True
 
 if __name__ == '__main__':
-    d = datasets.pascal_voc('trainval', '2007')
+    #d = datasets.pascal_voc('trainval', '2007')
+    d = datasets.pascal_voc('train', 'ak47')
     res = d.roidb
     from IPython import embed; embed()

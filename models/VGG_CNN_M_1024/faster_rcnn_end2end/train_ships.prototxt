@@ -8,7 +8,7 @@ layer {
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 2"
   }
 }
 layer {
@@ -28,8 +28,6 @@ layer {
     num_output: 96
     kernel_size: 7
     stride: 2
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -77,8 +75,6 @@ layer {
     pad: 1
     kernel_size: 5
     stride: 2
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -125,8 +121,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -150,8 +144,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -175,8 +167,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -348,7 +338,7 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 2"
   }
 }
 
@@ -379,8 +369,6 @@ layer {
   }
   inner_product_param {
     num_output: 4096
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -411,8 +399,6 @@ layer {
   }
   inner_product_param {
     num_output: 1024
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -431,10 +417,10 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "cls_score_ships"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "cls_score"
+  top: "cls_score_ships"
   param {
     lr_mult: 1
   }
@@ -442,7 +428,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 21
+    num_output: 2
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -465,7 +451,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 84
+    num_output: 8
     weight_filler {
       type: "gaussian"
       std: 0.001
@@ -479,7 +465,7 @@ layer {
 layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
-  bottom: "cls_score"
+  bottom: "cls_score_ships"
   bottom: "labels"
   propagate_down: 1
   propagate_down: 0

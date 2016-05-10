@@ -14,9 +14,10 @@ See README.md for installation instructions before running.
 """
 
 import _init_paths
-from fast_rcnn.config import cfg
+from fast_rcnn.config import cfg, cfg_from_file
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
+
 from utils.timer import Timer
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,16 +26,15 @@ import caffe, os, sys, cv2
 import argparse
 
 CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+           'ship')
 
 NETS = {'vgg16': ('VGG16',
                   'VGG16_faster_rcnn_final.caffemodel'),
+        'vgg': ('VGG_CNN_M_1024',
+                   'VGG_faster_rcnn_final.caffemodel'),
         'zf': ('ZF',
                   'ZF_faster_rcnn_final.caffemodel')}
+
 
 
 def vis_detections(im, class_name, dets, thresh=0.5):
@@ -69,13 +69,13 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def demo(net, image_name):
+def demo(net, im_file):
     """Detect object classes in an image using pre-computed object proposals."""
 
-    # Load the demo image
-    im_file = os.path.join(cfg.ROOT_DIR, 'data', 'demo', image_name)
-    im = cv2.imread(im_file)
-
+    # Load the demo image as gray scale
+    gim = cv2.imread(im_file, flags= cv2.CV_LOAD_IMAGE_GRAYSCALE)
+    # convert to rgb repeated in each channel
+    im = cv2.cvtColor(gim, cv2.COLOR_GRAY2BGR)
     # Detect all object classes and regress object bounds
     timer = Timer()
     timer.tic()
@@ -105,26 +105,34 @@ def parse_args():
     parser.add_argument('--cpu', dest='cpu_mode',
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='zf')
+    parser.add_argument('--net', dest='demo_net', help='Network to use [zf]',
+                        choices=NETS.keys(), default='vgg')
+    parser.add_argument('--cfg', dest='cfg_file',
+                        help='optional config file',
+                        default=None, type=str)
 
     args = parser.parse_args()
 
     return args
 
 if __name__ == '__main__':
+
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
 
     args = parse_args()
+    if args.cfg_file is not None:
+        cfg_from_file(args.cfg_file)
 
     prototxt = os.path.join(cfg.ROOT_DIR, 'models', NETS[args.demo_net][0],
-                            'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-    caffemodel = os.path.join(cfg.ROOT_DIR, 'data', 'faster_rcnn_models',
-                              NETS[args.demo_net][1])
+                            'faster_rcnn_end2end', 'test_ships.prototxt')
+    #caffemodel = os.path.join(cfg.ROOT_DIR, 'output', 'faster_rcnn_end2end',
+    #                         'ak47_train', 'zf_faster_rcnn_iter_70000.caffemodel')
+    caffemodel = os.path.join(cfg.ROOT_DIR, 'output', 'faster_rcnn_end2end',
+                             'ships_train', 'vgg_cnn_m_1024_faster_rcnn_iter_500000.caffemodel')
 
     if not os.path.isfile(caffemodel):
-        raise IOError(('{:s} not found.\nDid you run ./data/script/'
-                       'fetch_faster_rcnn_models.sh?').format(caffemodel))
+        raise IOError(('{:s} not found.\nDid you train it?'
+                       ).format(caffemodel))
 
     if args.cpu_mode:
         caffe.set_mode_cpu()
@@ -137,15 +145,33 @@ if __name__ == '__main__':
     print '\n\nLoaded network {:s}'.format(caffemodel)
 
     # Warmup on a dummy image
+    #im = 128 * np.ones((300, 500, 1), dtype=np.uint8)
     im = 128 * np.ones((300, 500, 3), dtype=np.uint8)
     for i in xrange(2):
         _, _= im_detect(net, im)
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
-    for im_name in im_names:
-        print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        print 'Demo for data/demo/{}'.format(im_name)
-        demo(net, im_name)
+    print("test positive images")
+    #im_test_dir = '/media/tomb/newvol/images/ships/HLD_distro/tanker/tanker'
+    im_test_dir = '/home/tomb/images/ships/HLD_distro/tanker/tanker_test'
+    #im_test_dir = '/home/tomb/images/ships/HLD_distro/non-ships/non-ship_test'
+    posCnt = 0
+    negCnt = 0
+    for root, dirs, files in os.walk(im_test_dir):
+        for name in files:
+            nextf = os.path.join(root, name)
+            print('detection for ' + nextf)
+            demo(net, nextf)
+            posCnt += 1
+
+    #im_test_dir = '/media/tomb/newvol/images/ships/HLD_distro/non-ships/waves'
+
+    #for root, dirs, files in os.walk(im_test_dir):
+    #    for name in files:
+    #        nextf = os.path.join(root, name)
+    #        print('detection for ' + nextf)
+    #        demo(net, nextf)
+    #        negCnt += 1
+
+    print("Tested {0} pos samples, {1} neg samples".format(posCnt, negCnt))
 
     plt.show()

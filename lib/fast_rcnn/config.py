@@ -60,6 +60,9 @@ __C.TRAIN.BG_THRESH_LO = 0.1
 # Use horizontally-flipped images during training?
 __C.TRAIN.USE_FLIPPED = True
 
+# If Images are color
+__C.TRAIN.IS_COLOR = True
+
 # Train bounding-box regressors
 __C.TRAIN.BBOX_REG = True
 
@@ -179,6 +182,8 @@ __C.DEDUP_BOXES = 1./16.
 # We use the same pixel mean for all networks even though it's not exactly what
 # they were trained with
 __C.PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
+#For SHIPS we need gray scale
+#__C.PIXEL_MEANS = np.array([70.6391])
 
 # For reproducibility
 __C.RNG_SEED = 3

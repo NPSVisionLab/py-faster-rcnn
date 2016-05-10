@@ -28,8 +28,6 @@ layer {
     num_output: 96
     kernel_size: 7
     stride: 2
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -77,8 +75,6 @@ layer {
     pad: 1
     kernel_size: 5
     stride: 2
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -125,8 +121,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -150,8 +144,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -175,8 +167,6 @@ layer {
     num_output: 512
     pad: 1
     kernel_size: 3
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -379,8 +369,6 @@ layer {
   }
   inner_product_param {
     num_output: 4096
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {
@@ -411,8 +399,6 @@ layer {
   }
   inner_product_param {
     num_output: 1024
-    weight_filler { type: "msra" }
-    bias_filler { type: "constant" value: 0.0 }
   }
 }
 layer {

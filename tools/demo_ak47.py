@@ -25,16 +25,15 @@ import caffe, os, sys, cv2
 import argparse
 
 CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+           'ak47')
 
 NETS = {'vgg16': ('VGG16',
                   'VGG16_faster_rcnn_final.caffemodel'),
+        'vgg': ('VGG_CNN_M_1024',
+                   'VGG_faster_rcnn_final.caffemodel'),
         'zf': ('ZF',
                   'ZF_faster_rcnn_final.caffemodel')}
+
 
 
 def vis_detections(im, class_name, dets, thresh=0.5):
@@ -69,11 +68,10 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
-def demo(net, image_name):
+def demo(net, im_file):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # Load the demo image
-    im_file = os.path.join(cfg.ROOT_DIR, 'data', 'demo', image_name)
     im = cv2.imread(im_file)
 
     # Detect all object classes and regress object bounds
@@ -105,8 +103,8 @@ def parse_args():
     parser.add_argument('--cpu', dest='cpu_mode',
                         help='Use CPU mode (overrides --gpu)',
                         action='store_true')
-    parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16]',
-                        choices=NETS.keys(), default='zf')
+    parser.add_argument('--net', dest='demo_net', help='Network to use [zf]',
+                        choices=NETS.keys(), default='vgg')
 
     args = parser.parse_args()
 
@@ -118,13 +116,15 @@ if __name__ == '__main__':
     args = parse_args()
 
     prototxt = os.path.join(cfg.ROOT_DIR, 'models', NETS[args.demo_net][0],
-                            'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-    caffemodel = os.path.join(cfg.ROOT_DIR, 'data', 'faster_rcnn_models',
-                              NETS[args.demo_net][1])
+                            'faster_rcnn_end2end', 'test_ak47.prototxt')
+    #caffemodel = os.path.join(cfg.ROOT_DIR, 'output', 'faster_rcnn_end2end',
+    #                         'ak47_train', 'zf_faster_rcnn_iter_70000.caffemodel')
+    caffemodel = os.path.join(cfg.ROOT_DIR, 'output', 'faster_rcnn_end2end',
+                             'ak47_train', 'vgg_cnn_m_1024_faster_rcnn_iter_5000.caffemodel')
 
     if not os.path.isfile(caffemodel):
-        raise IOError(('{:s} not found.\nDid you run ./data/script/'
-                       'fetch_faster_rcnn_models.sh?').format(caffemodel))
+        raise IOError(('{:s} not found.\nDid you train it?'
+                       ).format(caffemodel))
 
     if args.cpu_mode:
         caffe.set_mode_cpu()
@@ -141,11 +141,26 @@ if __name__ == '__main__':
     for i in xrange(2):
         _, _= im_detect(net, im)
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
-    for im_name in im_names:
-        print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        print 'Demo for data/demo/{}'.format(im_name)
-        demo(net, im_name)
+    print("Test positive images")
+    im_test_dir = '/home/tomb/git/CVAC/data/ak47_people/test/pos'
+    posCnt = 0
+    negCnt = 0
+    for root, dirs, files in os.walk(im_test_dir):
+        for name in files:
+            nextf = os.path.join(root, name)
+            print('detection for ' + nextf)
+            demo(net, nextf)
+            posCnt += 1
+
+    im_test_dir = '/home/tomb/git/CVAC/data/ak47_people/test/neg'
+
+    for root, dirs, files in os.walk(im_test_dir):
+        for name in files:
+            nextf = os.path.join(root, name)
+            print('detection for ' + nextf)
+            demo(net, nextf)
+            negCnt += 1
+
+    print("Tested {0} pos samples, {1} neg samples".format(posCnt, negCnt))
 
     plt.show()
