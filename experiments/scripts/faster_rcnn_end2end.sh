@@ -15,6 +15,7 @@ NET=$2
 NET_lc=${NET,,}
 ITERS=70000
 DATASET_TRAIN=voc_2007_trainval
+#DATASET_TRAIN=ak47_train
 DATASET_TEST=voc_2007_test
 
 array=( $@ )

@@ -106,6 +106,26 @@ if __name__ == '__main__':
 
     output_dir = get_output_dir(imdb, None)
     print 'Output will be saved to `{:s}`'.format(output_dir)
+    max_count = 0
+    for count in xrange(max_count):
+        base_lr = 10 ** np.random.uniform(-6,-2)
+        momentum = np.random.uniform(0.1, 0.7)
+        nextSolver = "solver_{0}_{1}.prototxt".format(base_lr, momentum)
+        change_solver(solver, nextSolver, "base_lr", base_lr)
+        change_solver(nextSolver, nextSolver, "momentum", momentum)
+        nextlog = "{0}_lr_m_{1}_{2}.log".format(log, base_lr, momentum)
+        trainInc(trainDir, posdir, negdir, 0, possize, 0, negsize, nextSolver, weights, nextlog)
+        nextdlog = "{0}_lr_m_{1}_{2}.log".format(dlog, base_lr, momentum)
+        detect(trainDir, "deploy.prototxt", "snapshots/snap__iter_2000.caffemodel", 0, possize, possize + negsize, nextdlog)
+        score = ScoreKeeper()
+        score.addScore(nextdlog)
+        print("Score for base_lr= {0}, momentum= {1}".format(base_lr, momentum))
+        print(score)
+        with open(nextlog, 'a') as f:
+            f.write("score for base_lr = {0}, momentum = {1}\n".format(base_lr, momentum))
+            f.write(score.__str__())
+        os.remove(nextdlog)
+
 
     train_net(args.solver, roidb, output_dir,
               pretrained_model=args.pretrained_model,
