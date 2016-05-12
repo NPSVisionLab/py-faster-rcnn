@@ -117,10 +117,12 @@ if __name__ == '__main__':
 
     args = parse_args()
 
-    prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
-                            'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
-    caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
-                              NETS[args.demo_net][1])
+    #prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
+    #                      'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
+    #caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
+    #                        NETS[args.demo_net][1])
+    prototxt = '/home/tomb/py-faster-rcnn/models/pascal_voc/VGG_CNN_M_1024/faster_rcnn_end2end/test.prototxt'
+    caffemodel = '/home/tomb/py-faster-rcnn/output/faster_rcnn_end2end/2007_trainval/vgg_cnn_m_1024_faster_rcnn_iter_100000.caffemodel'
 
     if not os.path.isfile(caffemodel):
         raise IOError(('{:s} not found.\nDid you run ./data/script/'

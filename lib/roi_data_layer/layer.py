@@ -97,8 +97,7 @@ class RoIDataLayer(caffe.Layer):
             top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
                 max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
         else:
-            #top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
-             top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 3,
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH, 1,
                 max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
         self._name_to_top_map['data'] = idx
         idx += 1

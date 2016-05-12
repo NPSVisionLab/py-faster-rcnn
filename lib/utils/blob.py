@@ -22,19 +22,20 @@ def im_list_to_blob(ims):
         blob = np.zeros((num_images, max_shape[0], max_shape[1], 3),
                     dtype=np.float32)
     else:
-        #blob = np.zeros((num_images, max_shape[0], max_shape[1], 1),
-        blob = np.zeros((num_images, max_shape[0], max_shape[1], 3),
+        blob = np.zeros((num_images, max_shape[0], max_shape[1],1),
                     dtype=np.float32)
     for i in xrange(num_images):
         im = ims[i]
         if cfg.TRAIN.IS_COLOR == True:
             blob[i, 0:im.shape[0], 0:im.shape[1], :] = im
         else:
-            #blob[i, 0:im.shape[0], 0:im.shape[1], -1] = im
-            blob[i, 0:im.shape[0], 0:im.shape[1], :] = im
+            blob[i, 0:im.shape[0], 0:im.shape[1],0] = im
+
     # Move channels (axis 3) to axis 1
     # Axis order will become: (batch elem, channel, height, width)
+
     channel_swap = (0, 3, 1, 2)
+
     blob = blob.transpose(channel_swap)
     return blob
 

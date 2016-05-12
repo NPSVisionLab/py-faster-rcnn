@@ -18,6 +18,7 @@ import subprocess
 import uuid
 from voc_eval import voc_eval
 from fast_rcnn.config import cfg
+import xml.dom.minidom as minidom
 
 
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -34,12 +35,12 @@ class pascal_voc(imdb):
         #self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
         self._data_path = os.path.join(self._devkit_path, self._year)
         self._classes = ('__background__', # always index 0
-        #                 'ship')
-                         'aeroplane', 'bicycle', 'bird', 'boat',
-                         'bottle', 'bus', 'car', 'cat', 'chair',
-                         'cow', 'diningtable', 'dog', 'horse',
-                         'motorbike', 'person', 'pottedplant',
-                         'sheep', 'sofa', 'train', 'tvmonitor')
+                         'ship')
+        #                'aeroplane', 'bicycle', 'bird', 'boat',
+        #                'bottle', 'bus', 'car', 'cat', 'chair',
+        #                 'cow', 'diningtable', 'dog', 'horse',
+        #                 'motorbike', 'person', 'pottedplant',
+        #                 'sheep', 'sofa', 'train', 'tvmonitor')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = ['.jpg', '.jpeg', '.png']
         self._image_index = self._load_image_set_index()
@@ -204,25 +205,23 @@ class pascal_voc(imdb):
 
         # print 'Loading: {}'.format(filename)
         def get_data_from_tag(node, tag):
-            return node.getElementsByTagName(tag)[0].childNodes[0].data
+            values = node.findall(tag)
+            return values[0].text
 
         if not os.path.exists(filename):
-	        boxes =  np.zeros((1, 4), dtype=np.uint16)
-	        gt_classes = np.zeros((1, self.num_classes), dtype=np.int32)
-	        gt_overlays =  np.zeros((1, self.num_classes),dtype=np.float32)
-
-	        return {'boxes' : boxes,
+            boxes =  np.zeros((1, 4), dtype=np.uint16)
+            gt_classes = np.zeros((1, self.num_classes), dtype=np.int32)
+            gt_overlays =  np.zeros((1, self.num_classes),dtype=np.float32)
+            # debug
+            print('No annotation for ' + filename)
+            return {'boxes' : boxes,
 		        'gt_classes': gt_classes,
 		        'gt_overlaps' : gt_overlays,
 	  	        'flipped' : False}
-        with open(filename) as f:
-            data = minidom.parseString(f.read())
 
-        objs = data.getElementsByTagName('object')
+        tree = ET.parse(filename)
+        objs = tree.findall('object')
 
-        #new change but not testing with NPS changes so commented out
-        #tree = ET.parse(filename)
-        #objs = tree.findall('object')
 
         if not self.config['use_diff']:
             # Exclude the samples labeled as difficult
@@ -248,10 +247,10 @@ class pascal_voc(imdb):
             bbox = obj.find('bndbox')
             # Make pixel indexes 0-based
 
-            x1 = float(get_data_from_tag(obj, 'xmin')) - 1
-            y1 = float(get_data_from_tag(obj, 'ymin')) - 1
-            x2 = float(get_data_from_tag(obj, 'xmax')) - 1
-            y2 = float(get_data_from_tag(obj, 'ymax')) - 1
+            x1 = float(get_data_from_tag(bbox, 'xmin')) - 1
+            y1 = float(get_data_from_tag(bbox, 'ymin')) - 1
+            x2 = float(get_data_from_tag(bbox, 'xmax')) - 1
+            y2 = float(get_data_from_tag(bbox, 'ymax')) - 1
             print(str(x1) + ',' + str(y1) + ',' + str(x2) + ',' + str(y2))
             cls = self._class_to_ind[
                     str(get_data_from_tag(obj, "name")).lower().strip()]

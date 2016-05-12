@@ -147,11 +147,11 @@ def _get_image_blob(roidb, scale_inds):
             if roidb[i]['flipped']:
                 im = im[:, ::-1, :]
         else:
-            gim = cv2.imread(roidb[i]['image'], flags= cv2.CV_LOAD_IMAGE_GRAYSCALE)
-            im = cv2.cvtColor(gim, cv2.COLOR_GRAY2BGR)
+            im = cv2.imread(roidb[i]['image'], flags= cv2.CV_LOAD_IMAGE_GRAYSCALE)
+            #im = cv2.cvtColor(gim, cv2.COLOR_GRAY2BGR)
             if roidb[i]['flipped']:
-                #im = im[:, ::-1]
-                im = im[:, ::-1, :]
+                im = im[:, ::-1]
+
 
         target_size = cfg.TRAIN.SCALES[scale_inds[i]]
         im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size,
